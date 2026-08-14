@@ -1,5 +1,7 @@
 package lexer;
 
+import utils.BanglaUtil;
+
 public class Token {
     public final TokenType type;
     public final String lexeme;
@@ -15,6 +17,7 @@ public class Token {
 
     @Override
     public String toString() {
-        return String.format("Token(%s, '%s', line=%d, col=%d)", type, lexeme, line, column);
+        return String.format("Token(%s, '%s', line=%s, col=%s)", 
+            type, lexeme, BanglaUtil.toBanglaNum(line), BanglaUtil.toBanglaNum(column));
     }
 }
