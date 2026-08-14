@@ -13,21 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-/**
- * Automated regression test runner for কথন (Kothon).
- *
- * Convention used to decide the EXPECTED outcome of each .bpl file,
- * based on its file name (no separate "expected output" files needed):
- *   - Files whose name contains "valid", or that live under a
- *     "review1_demo" folder, are expected to compile with ZERO errors.
- *   - Every other file (e.g. invalid_character.bpl, type_mismatch.bpl)
- *     is expected to contain AT LEAST ONE error — the point of that
- *     file is to prove the compiler *catches* that specific mistake.
- *
- * A test PASSES when the actual outcome (has errors / has no errors)
- * matches what the file name promises — regardless of how many errors,
- * since the exact count isn't the point, catching-vs-not is.
- */
 public class TestRunner {
 
     private static final String LINE = "------------------------------------------------------------";
@@ -50,7 +35,6 @@ public class TestRunner {
         }
     }
 
-    /** Runs every .bpl file found under testsRoot and prints a full pass/fail report. */
     public void runAll(String testsRoot) {
         List<Path> files = discover(testsRoot);
 
@@ -99,9 +83,7 @@ public class TestRunner {
         return files;
     }
 
-    // Any filename containing one of these words is expected to trigger
-    // at least one error — that's the whole point of that test file.
-    // Everything else defaults to "should compile with zero errors".
+    
     private static final String[] ERROR_INDICATING_WORDS = {
             "invalid", "missing", "undefined", "duplicate", "mismatch", "uninitialized"
     };
