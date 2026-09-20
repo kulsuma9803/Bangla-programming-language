@@ -1,8 +1,6 @@
 package parser;
 
 import ast.*;
-
-
 public class ASTPrinter {
 
     public void print(ASTNode node) {
@@ -45,6 +43,14 @@ public class ASTPrinter {
                 print(i.elseBranch, depth + 2);
             }
 
+        } else if (node instanceof WhileNode) {
+            WhileNode w = (WhileNode) node;
+            System.out.println(indent + "While");
+            System.out.println(indent + "  Condition:");
+            print(w.condition, depth + 2);
+            System.out.println(indent + "  Body:");
+            print(w.body, depth + 2);
+
         } else if (node instanceof BlockNode) {
             BlockNode b = (BlockNode) node;
             System.out.println(indent + "Block");
@@ -78,3 +84,7 @@ public class ASTPrinter {
         }
     }
 }
+
+
+
+
