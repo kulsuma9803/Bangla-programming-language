@@ -7,18 +7,6 @@ import utils.ErrorReporter;
 
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Recursive-descent parser for কথন (Kothon).
- *
- * Grammar reference: docs/GRAMMAR.md
- *
- * Error recovery strategy: when a statement fails to parse, the parser
- * reports the error and skips tokens until the next ';' or '}' (or EOF),
- * then keeps parsing the rest of the program. This means one syntax
- * error never stops the whole compilation (satisfies "no runtime
- * crashes" and "basic syntax error recovery" requirements).
- */
 public class Parser {
 
     private final List<Token> tokens;
@@ -46,6 +34,7 @@ public class Parser {
             if (check(TokenType.DHORI)) return declaration();
             if (check(TokenType.DEKHAO)) return printStatement();
             if (check(TokenType.JODI)) return ifStatement();
+            if (check(TokenType.JOTOKKHON)) return whileStatement();
             if (check(TokenType.LBRACE)) return block();
             if (check(TokenType.IDENTIFIER)) return assignment();
 
@@ -59,8 +48,6 @@ public class Parser {
             return null;
         }
     }
-
-    // ধরি সংখ্যা x = 5; | ধরি বাক্য নাম;
     private ASTNode declaration() {
         Token dhoriTok = advance(); // consume ধরি
         Token typeTok;
@@ -87,8 +74,6 @@ public class Parser {
         consume(TokenType.SEMICOLON, "Expected ';' after assignment");
         return new AssignmentNode(nameTok.lexeme, value, nameTok.line, nameTok.column);
     }
-
-    // দেখাও(expression);
     private ASTNode printStatement() {
         Token dekhaoTok = advance();
         consume(TokenType.LPAREN, "Expected '(' after 'দেখাও'");
@@ -97,8 +82,6 @@ public class Parser {
         consume(TokenType.SEMICOLON, "Expected ';' after print statement");
         return new PrintNode(expr, dekhaoTok.line, dekhaoTok.column);
     }
-
-    // যদি (condition) { ... } [ নাহলে { ... } ]
     private ASTNode ifStatement() {
         Token jodiTok = advance();
         consume(TokenType.LPAREN, "Expected '(' after 'যদি'");
@@ -110,6 +93,16 @@ public class Parser {
             elseBranch = block();
         }
         return new IfNode(condition, thenBranch, elseBranch, jodiTok.line, jodiTok.column);
+    }
+
+    // যতক্ষণ (condition) { ... }
+    private ASTNode whileStatement() {
+        Token whileTok = advance();
+        consume(TokenType.LPAREN, "Expected '(' after 'যতক্ষণ'");
+        ASTNode condition = condition();
+        consume(TokenType.RPAREN, "Expected ')' after condition");
+        BlockNode body = block();
+        return new WhileNode(condition, body, whileTok.line, whileTok.column);
     }
 
     private BlockNode block() {
@@ -249,8 +242,6 @@ public class Parser {
         return sb.toString();
     }
 
-    // ---------------- token helpers ----------------
-
     private boolean check(TokenType type) {
         return !isAtEnd() && peek().type == type;
     }
@@ -289,12 +280,6 @@ public class Parser {
         errors.report("Syntax", message + " (got '" + token.lexeme + "')", token.line, token.column);
         return new ParseError();
     }
-
-    /**
-     * Skips tokens until it finds a likely statement boundary
-     * (';' or '}') so parsing can resume — this is the required
-     * "skip to semicolon or end of line" error recovery.
-     */
     private void synchronize() {
         while (!isAtEnd()) {
             TokenType t = previous().type;
@@ -303,6 +288,7 @@ public class Parser {
                 case DHORI:
                 case DEKHAO:
                 case JODI:
+                case JOTOKKHON:
                 case RBRACE:
                     return;
                 default:
@@ -313,3 +299,5 @@ public class Parser {
 
     private static class ParseError extends RuntimeException {}
 }
+
+
