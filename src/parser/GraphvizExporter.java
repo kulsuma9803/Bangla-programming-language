@@ -78,6 +78,17 @@ public class GraphvizExporter {
             }
             return id;
 
+        } else if (node instanceof WhileNode) {
+            WhileNode w = (WhileNode) node;
+            String id = node("While");
+            String condId = node("condition");
+            edge(id, condId);
+            edge(condId, visit(w.condition));
+            String bodyId = node("body");
+            edge(id, bodyId);
+            edge(bodyId, visit(w.body));
+            return id;
+
         } else if (node instanceof BlockNode) {
             BlockNode b = (BlockNode) node;
             String id = node("Block");
