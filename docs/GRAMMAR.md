@@ -1,6 +1,6 @@
 # কথন (Kothon) — Formal Grammar (BNF)
 
-## Review-1 Scope: Declaration, Assignment, Print, If-Else, Expressions
+## Scope: Declaration, Assignment, Print, If-Else, While Loop, Expressions (Review 1 + Review 2)
 
 ```bnf
 <program>        ::= <statement>*
@@ -9,6 +9,7 @@
                      | <assignment>
                      | <print_stmt>
                      | <if_stmt>
+                     | <while_stmt>
                      | <block>
 
 <declaration>     ::= <type> <identifier> "=" <expression> ";"
@@ -22,6 +23,8 @@
 
 <if_stmt>         ::= "যদি" "(" <condition> ")" <block>
                      | "যদি" "(" <condition> ")" <block> "নাহলে" <block>
+
+<while_stmt>      ::= "যতক্ষণ" "(" <condition> ")" <block>
 
 <block>           ::= "{" <statement>* "}"
 
@@ -76,6 +79,7 @@
 | দেখাও   | print          |
 | যদি     | if             |
 | নাহলে   | else           |
+| যতক্ষণ  | while          |
 | সত্য    | true           |
 | মিথ্যা  | false          |
 | এবং     | and            |
@@ -84,3 +88,28 @@
 
 ## Comments
 Single-line comments start with `//` and run to end of line.
+
+## Review 2 Additions
+
+### While Loop
+`যতক্ষণ (condition) { ... }` repeats its block for as long as `condition`
+evaluates to true. Semantically checked exactly like `যদি`'s condition
+(must resolve to boolean — comparisons, `সত্য`/`মিথ্যা`, or `এবং`/`অথবা`/`না`
+combinations).
+
+### Target Code Generation
+Two new compiler back-end stages sit after semantic analysis:
+
+1. **Three-Address Code (TAC)** — an intermediate representation where
+   every compound expression is broken into `t1 = a + b`-style
+   instructions, and every `যদি`/`যতক্ষণ` is lowered into labeled jumps
+   (`goto L1`, `ifFalse t1 goto L2`, `L1:`). This is generated purely
+   for inspection (menu option 8) — it mirrors the classic textbook IR
+   used in compiler courses.
+2. **Python target code** — valid, executable Python 3 source,
+   generated directly from the (type-checked) AST. Bangla identifiers
+   are emitted unchanged (Python 3 allows Unicode identifiers per
+   PEP 3131), সংখ্যা → `int`, বাক্য → `str`, `যদি`/`নাহলে` → `if`/`else`,
+   `যতক্ষণ` → `while`. Integer→String coercion (see SemanticAnalyzer) is
+   made explicit with `str(...)` calls, since Python's `+` doesn't
+   auto-coerce the way কথন's does.

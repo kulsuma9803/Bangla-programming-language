@@ -1,7 +1,8 @@
+
 # কথন (Kothon) — A Bangla Programming Language & Compiler
 
 **Course:** CSE-4114 Compiler Design and Construction Sessional
-**Milestone:** Review 1 (Lexer → Parser → AST → Semantic Analysis, up to IF-ELSE)
+**Milestone:** Review 1 + Review 2 (Lexer → Parser → AST → Semantic Analysis → TAC → Python Target Code — IF-ELSE and WHILE loops both supported)
 
 ## What is কথন?
 
@@ -77,7 +78,7 @@ Beyond the minimum Review-1 requirements, this compiler also includes:
   whole compiler, ready to drop into the Final Report's "Compiler Design"
   section.
 
-## Review-1 Feature Checklist
+## Feature Checklist (Full Course Requirement)
 
 | Requirement (from course spec)                     | Status |
 |------------------------------------------------------|:---:|
@@ -85,9 +86,11 @@ Beyond the minimum Review-1 requirements, this compiler also includes:
 | Arithmetic ops with correct precedence (`* / %` before `+ -`) | ✅ |
 | Assignment statements                                 | ✅ |
 | IF-ELSE conditional statement                          | ✅ |
+| **WHILE loop (`যতক্ষণ`)**                              | ✅ **(Review 2)** |
 | Basic syntax error recovery (skip to `;` / `}`)        | ✅ |
 | No runtime crashes on malformed input                  | ✅ |
-| WHILE loop, target codegen                              | Planned for Review 2 |
+| **Generation of valid, executable Python target code**   | ✅ **(Review 2)** |
+| Optional: WebAssembly target                            | Not implemented (Python chosen instead) |
 
 ## Project Structure
 
@@ -103,7 +106,8 @@ BanglaCompiler_Review1/
 │   ├── parser/                # Parser, ASTPrinter
 │   ├── ast/                   # All AST node classes
 │   ├── semantic/              # SemanticAnalyzer, Symbol, SymbolTable, SymbolTablePrinter
-│   └── utils/                 # ErrorReporter, FileLoader
+│   ├── codegen/                # TACGenerator, ThreeAddressCode, PythonCodeGenerator (Review 2)
+│   └── utils/                 # ErrorReporter, FileLoader, TestRunner, BanglaUtil
 ├── tests/
 │   ├── lexer/                 # valid + invalid-character test cases
 │   ├── parser/                # valid + missing-identifier/brace + nested-if-else
@@ -136,11 +140,32 @@ You'll get a menu:
 5. Export AST as Graphviz (.dot)
 6. REPL Mode (Interactive)
 7. Run Automated Test Suite (all tests/ files)
-8. Exit
+8. Generate Three Address Code (TAC)
+9. Generate Python Target Code
+10. Exit
 Choose:
 ```
 Enter a `.bpl` file path when prompted (or press Enter to use the bundled
 demo at `tests/review1_demo/demo_program.bpl`), then pick a phase.
+
+## Review 2 — Target Code Generation
+
+Options 8 and 9 only run once a program passes semantic analysis with
+zero errors (codegen is refused otherwise, so a broken program can
+never produce broken target code).
+
+- **Option 8 (TAC)** prints the compiler's intermediate representation
+  — a flat sequence of `t1 = a + b` / `goto L1` / `ifFalse t1 goto L2`
+  instructions, the classic textbook IR between AST and target code.
+- **Option 9 (Python)** writes a real, runnable `output/program.py` and
+  previews it on screen. Try it immediately:
+  ```bash
+  python output/program.py   # Mac/Linux: python3 output/program.py
+  ```
+  Bangla variable names carry over unchanged (Python 3 allows Unicode
+  identifiers), and `যতক্ষণ` compiles to a real Python `while` loop —
+  for example, `tests/review2_demo/factorial.bpl` generates and runs a
+  genuine factorial calculator.
 
 ## Demo Flow
 ```

@@ -33,7 +33,7 @@ without any phase crashing the program.
 | `semantic`  | Walks the AST once, maintaining a **scoped** symbol table. Infers a type for every expression node and reports mismatches, undefined variables, duplicate declarations, and use-before-initialization. |
 | `utils`     | Cross-cutting concerns: `ErrorReporter` (shared error sink across all phases) and `FileLoader` (UTF-8 file reading). |
 
-## 3. Class Relationships (UML-style, textual)
+# 3. Class Relationships (UML-style, textual)
 
 ```
                     ┌────────────┐
