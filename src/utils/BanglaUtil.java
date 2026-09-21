@@ -3,17 +3,9 @@ package utils;
 public class BanglaUtil {
     
     private static final char[] BANGLA_DIGITS = {'০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'};
-
-    /**
-     * Converts an integer to a string using Bangla numerals.
-     */
     public static String toBanglaNum(long value) {
         return toBanglaNum(String.valueOf(value));
     }
-
-    /**
-     * Replaces all ASCII digits in a string with Bangla numerals.
-     */
     public static String toBanglaNum(String text) {
         if (text == null) return null;
         StringBuilder sb = new StringBuilder(text.length());

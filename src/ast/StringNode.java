@@ -1,6 +1,6 @@
 package ast;
 
-
+/** String literal, e.g. "হ্যালো" */
 public class StringNode extends ASTNode {
     public final String value;
 

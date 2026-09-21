@@ -19,4 +19,3 @@ public class TACLabel extends TACInstr {
         return name + ":";
     }
 }
-

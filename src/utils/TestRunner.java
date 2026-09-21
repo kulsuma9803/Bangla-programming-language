@@ -35,11 +35,16 @@ public class TestRunner {
         }
     }
 
+    /**
+     * Runs every .bpl file found under testsRoot and prints a full pass/fail
+     * report.
+     */
     public void runAll(String testsRoot) {
         List<Path> files = discover(testsRoot);
 
         System.out.println(LINE);
-        System.out.println("  স্বয়ংক্রিয় টেস্ট স্যুট — " + testsRoot + " ফোল্ডারে " + BanglaUtil.toBanglaNum(files.size()) + " টি ফাইল পাওয়া গেছে");
+        System.out.println("  স্বয়ংক্রিয় টেস্ট স্যুট — " + testsRoot + " ফোল্ডারে "
+                + BanglaUtil.toBanglaNum(files.size()) + " টি ফাইল পাওয়া গেছে");
         System.out.println(LINE);
 
         List<Result> results = new ArrayList<>();
@@ -48,11 +53,15 @@ public class TestRunner {
         }
 
         System.out.println();
+        int i = 1;
         for (Result r : results) {
-            String status = r.passed() ? "[উত্তীর্ণ]" : "[অকৃতকার্য]";
-            String expected = r.expectedNoErrors ? "০টি error আশা করা হচ্ছে" : "কমপক্ষে ১টি error আশা করা হচ্ছে";
-            String actual = BanglaUtil.toBanglaNum(r.errorCount) + " টি error পাওয়া গেছে";
-            System.out.printf("  %-12s %-55s (%s, %s)%n", status, r.path, expected, actual);
+            String status = r.passed() ? "উত্তীর্ণ ✔" : "অকৃতকার্য ✘";
+            String expected = r.expectedNoErrors ? "০টি error" : "কমপক্ষে ১টি error";
+            String actual = BanglaUtil.toBanglaNum(r.errorCount) + "টি error";
+            System.out.printf("  [%s] %s%n", BanglaUtil.toBanglaNum(i), r.path);
+            System.out.printf("       %-14s প্রত্যাশা: %-20s পাওয়া গেছে: %s%n", status, expected, actual);
+            System.out.println();
+            i++;
         }
 
         long passed = results.stream().filter(Result::passed).count();
@@ -60,13 +69,14 @@ public class TestRunner {
 
         System.out.println();
         System.out.println(LINE);
-        System.out.printf("  সারাংশ: মোট = %s | উত্তীর্ণ = %s | অকৃতকার্য = %s%n", 
+        System.out.printf("  সারাংশ: মোট = %s | উত্তীর্ণ = %s | অকৃতকার্য = %s%n",
                 BanglaUtil.toBanglaNum(results.size()), BanglaUtil.toBanglaNum(passed), BanglaUtil.toBanglaNum(failed));
         System.out.println(LINE);
         if (failed == 0) {
             System.out.println("  সব টেস্ট উত্তীর্ণ হয়েছে ✔ — প্রতিটা টেস্ট ফাইল তার নাম অনুযায়ী ঠিক কাজ করছে।");
         } else {
-            System.out.println("  " + BanglaUtil.toBanglaNum(failed) + " টি টেস্ট প্রত্যাশা অনুযায়ী কাজ করেনি — উপরে [অকৃতকার্য] লাইনগুলো দেখো।");
+            System.out.println("  " + BanglaUtil.toBanglaNum(failed)
+                    + " টি টেস্ট প্রত্যাশা অনুযায়ী কাজ করেনি — উপরে [অকৃতকার্য] লাইনগুলো দেখো।");
         }
         System.out.println(LINE);
     }
@@ -75,17 +85,16 @@ public class TestRunner {
         List<Path> files = new ArrayList<>();
         try (Stream<Path> walk = Files.walk(Path.of(testsRoot))) {
             walk.filter(p -> p.toString().endsWith(".bpl"))
-                .sorted()
-                .forEach(files::add);
+                    .sorted()
+                    .forEach(files::add);
         } catch (IOException e) {
             System.out.println("Could not scan " + testsRoot + ": " + e.getMessage());
         }
         return files;
     }
 
-    
     private static final String[] ERROR_INDICATING_WORDS = {
-            "invalid", "missing", "undefined", "duplicate", "mismatch", "uninitialized"
+            "invalid", "missing", "undefined", "duplicate", "mismatch", "uninitialized", "zero"
     };
 
     private Result runOne(Path file) {

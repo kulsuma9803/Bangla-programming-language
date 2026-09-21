@@ -1,7 +1,6 @@
 package lexer;
 
 import utils.BanglaUtil;
-
 public class Token {
     public final TokenType type;
     public final String lexeme;

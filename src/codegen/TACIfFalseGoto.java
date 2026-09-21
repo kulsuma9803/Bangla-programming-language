@@ -20,6 +20,3 @@ public class TACIfFalseGoto extends TACInstr {
         return "শর্ত " + cond + " মিথ্যা হলে " + label + "-এ যাও";
     }
 }
-
-
-

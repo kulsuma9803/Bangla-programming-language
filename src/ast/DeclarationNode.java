@@ -1,7 +1,8 @@
 package ast;
 
+/** ধরি সংখ্যা x = 5;  OR  ধরি বাক্য নাম; */
 public class DeclarationNode extends ASTNode {
-    public final String typeName;  
+    public final String typeName;   // "সংখ্যা" or "বাক্য"
     public final String varName;
     public final ASTNode initializer; // may be null if no initial value given
 

@@ -24,4 +24,3 @@ public class TACBinOp extends TACInstr {
         return dest + " = " + left + " " + op + " " + right;
     }
 }
-

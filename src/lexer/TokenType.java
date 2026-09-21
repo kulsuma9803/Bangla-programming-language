@@ -8,7 +8,7 @@ public enum TokenType {
     INT_LITERAL,
     STRING_LITERAL,
     IDENTIFIER,
-	
+
     // Keywords
     DHORI,      // ধরি   - declare
     SONGKHA,    // সংখ্যা - Integer type
@@ -38,4 +38,3 @@ public enum TokenType {
     EOF,
     ERROR
 }
-

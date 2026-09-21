@@ -1,5 +1,6 @@
 package ast;
 
+/** সত্য / মিথ্যা literal */
 public class BooleanNode extends ASTNode {
     public final boolean value;
 

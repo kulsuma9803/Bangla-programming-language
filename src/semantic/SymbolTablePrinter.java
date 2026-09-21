@@ -40,6 +40,9 @@ public class SymbolTablePrinter {
         System.out.println(sb);
     }
 
+    // Bangla glyphs render ~2 terminal cells wide in most fonts; pad by
+    // character-count anyway since terminal width varies — good enough
+    // for a readable demo table without pulling in a wcwidth library.
     private int displayWidth(String s) {
         return s.length();
     }

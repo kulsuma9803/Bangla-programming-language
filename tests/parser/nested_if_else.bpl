@@ -1,5 +1,3 @@
-
-
 // Advanced parser test: nested if-else inside if-else, showing block scoping
 ধরি সংখ্যা নম্বর = ৭৫;
 ধরি বাক্য গ্রেড = "";

@@ -1,4 +1,6 @@
 package ast;
+
+/** Unary operation: currently supports unary minus (-) and logical not (না) */
 public class UnaryNode extends ASTNode {
     public final String operator;
     public final ASTNode operand;

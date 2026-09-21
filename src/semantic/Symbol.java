@@ -1,8 +1,7 @@
 package semantic;
-
 public class Symbol {
     public final String name;
-    public final String type; 
+    public final String type; // "সংখ্যা" (Integer) or "বাক্য" (String)
     public boolean initialized;
 
     public Symbol(String name, String type, boolean initialized) {
@@ -11,4 +10,3 @@ public class Symbol {
         this.initialized = initialized;
     }
 }
-

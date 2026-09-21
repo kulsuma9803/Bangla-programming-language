@@ -2,13 +2,6 @@ package utils;
 
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * Central place to collect and print errors from every compiler phase
- * (lexical, syntax, semantic). Keeping this shared means the compiler
- * never needs to crash on the first error — it can recover and keep
- * going, which satisfies the "no runtime crashes" requirement.
- */
 public class ErrorReporter {
 
     public static class CompileError {
@@ -47,12 +40,6 @@ public class ErrorReporter {
 
     private static final String LINE = "----------------------------------------------------------";
 
-    /**
-     * Prints a clean, bordered summary of every error collected so far
-     * (across whichever phases have run). Designed to look presentable
-     * during a live demo — clear status line, numbered entries, one
-     * error per line with phase/line/column called out explicitly.
-     */
     public void printAll() {
         System.out.println(LINE);
         if (errors.isEmpty()) {

@@ -1,4 +1,3 @@
-
 // Parser test: declarations, assignment, if-else, nested blocks
 ধরি সংখ্যা ক = ১০;
 ধরি সংখ্যা খ = ২০;

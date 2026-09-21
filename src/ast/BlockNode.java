@@ -17,4 +17,3 @@ public class BlockNode extends ASTNode {
         return "Block(" + statements.size() + " stmts)";
     }
 }
-

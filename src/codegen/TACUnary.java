@@ -24,4 +24,3 @@ public class TACUnary extends TACInstr {
         return dest + " = " + op + " " + operand;
     }
 }
-

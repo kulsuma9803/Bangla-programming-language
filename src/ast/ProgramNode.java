@@ -17,4 +17,3 @@ public class ProgramNode extends ASTNode {
         return "Program(" + statements.size() + " stmts)";
     }
 }
-

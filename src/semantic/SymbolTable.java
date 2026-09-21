@@ -2,6 +2,7 @@ package semantic;
 
 import java.util.HashMap;
 import java.util.Map;
+
 public class SymbolTable {
     private final java.util.List<Map<String, Symbol>> scopes = new java.util.ArrayList<>();
 
@@ -17,6 +18,7 @@ public class SymbolTable {
         if (scopes.size() > 1) scopes.remove(scopes.size() - 1);
     }
 
+    /** Declares in the current (innermost) scope. Returns false if already declared there. */
     public boolean declare(String name, String type, boolean initialized) {
         Map<String, Symbol> current = scopes.get(scopes.size() - 1);
         if (current.containsKey(name)) return false;
@@ -24,7 +26,7 @@ public class SymbolTable {
         return true;
     }
 
-    
+    /** Looks up a variable, searching from innermost to outermost scope. */
     public Symbol resolve(String name) {
         for (int i = scopes.size() - 1; i >= 0; i--) {
             Symbol s = scopes.get(i).get(name);
@@ -37,9 +39,8 @@ public class SymbolTable {
         return scopes.get(scopes.size() - 1).containsKey(name);
     }
 
-    
+    /** Returns every symbol declared in the outermost (global) scope, for reporting/demo purposes. */
     public java.util.Collection<Symbol> getGlobalScopeSymbols() {
         return scopes.get(0).values();
     }
 }
-

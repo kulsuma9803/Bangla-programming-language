@@ -1,4 +1,3 @@
-
 // Semantic test: '+' operator overloaded for String concatenation
 ধরি বাক্য প্রথম_নাম = "রাহুল";
 ধরি বাক্য পদবি = "আহমেদ";

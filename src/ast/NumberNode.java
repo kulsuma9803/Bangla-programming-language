@@ -1,5 +1,6 @@
 package ast;
 
+/** Integer literal, e.g. 42 */
 public class NumberNode extends ASTNode {
     public final int value;
 

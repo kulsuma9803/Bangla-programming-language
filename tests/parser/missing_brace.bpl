@@ -1,5 +1,3 @@
-
-
 // Parser test: missing closing brace on if-block
 ধরি সংখ্যা ক = ১;
 যদি (ক == ১) {

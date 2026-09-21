@@ -1,4 +1,3 @@
-
 // Semantic test: correctly typed program, no errors expected
 ধরি সংখ্যা ক = ৫;
 ধরি সংখ্যা খ = ৩;

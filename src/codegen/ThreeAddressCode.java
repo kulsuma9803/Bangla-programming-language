@@ -26,4 +26,3 @@ public class ThreeAddressCode {
         instructions.add(instr);
     }
 }
-

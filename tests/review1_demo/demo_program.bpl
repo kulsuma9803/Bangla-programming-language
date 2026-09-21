@@ -1,9 +1,4 @@
 
-// কথন (Kothon) — Review ১ Demo Program
-// Demonstrates: declaration (both types), assignment, arithmetic with
-// precedence, string concatenation, logical/relational operators,
-// nested if-else, and print.
-
 ধরি সংখ্যা বয়স = ১৮;
 ধরি সংখ্যা সীমা = ১৫ + ৩ * ২;      // precedence: ৩*২ first -> সীমা = ২১
 ধরি বাক্য নাম = "রাহুল";
