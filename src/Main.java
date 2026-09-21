@@ -6,6 +6,11 @@ import parser.GraphvizExporter;
 import ast.ProgramNode;
 import semantic.SemanticAnalyzer;
 import semantic.SymbolTablePrinter;
+import codegen.TACGenerator;
+import codegen.ThreeAddressCode;
+import codegen.TACInstr;
+import codegen.PythonCodeGenerator;
+import codegen.WasmCodeGenerator;
 import utils.ErrorReporter;
 import utils.FileLoader;
 import utils.TestRunner;
@@ -16,18 +21,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Scanner;
-
-/**
- * Entry point for the কথন (Kothon) compiler — Review 1 build.
- * Presents a simple console menu so any team member can demo any
- * phase of the pipeline independently, or run it end-to-end.
- */
 public class Main {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("===== কথন (Kothon) Bangla Compiler — Review 1 =====");
+        System.out.println("===== কথন (Kothon) Bangla Compiler — Review 1 + Review 2 =====");
         System.out.print("Source file path (.bpl) [Enter for default demo]: ");
         String path = scanner.nextLine().trim();
         if (path.isEmpty()) {
@@ -48,11 +47,14 @@ public class Main {
             System.out.println("1. Run Lexer");
             System.out.println("2. Run Parser");
             System.out.println("3. Run Semantic Analyzer");
-            System.out.println("4. Run Full Pipeline");
-            System.out.println("5. Export AST as Graphviz (.dot)");
-            System.out.println("6. REPL Mode (Interactive)");
-            System.out.println("7. Run Automated Test Suite (all tests/ files)");
-            System.out.println("8. Exit");
+            System.out.println("4. Export AST as Graphviz (.dot)");
+            System.out.println("5. REPL Mode (Interactive)");
+            System.out.println("6. Run Automated Test Suite (all tests/ files)");
+            System.out.println("7. Generate Three Address Code (TAC)");
+            System.out.println("8. Generate Python Target Code");
+            System.out.println("9. Generate WebAssembly Target Code (Optional)");
+            System.out.println("10. Run Full Pipeline");
+            System.out.println("11. Exit");
             System.out.print("Choose: ");
             String choice = scanner.nextLine().trim();
 
@@ -60,11 +62,14 @@ public class Main {
                 case "1": runLexer(source); break;
                 case "2": runParser(source); break;
                 case "3": runSemantic(source); break;
-                case "4": runFullPipeline(source); break;
-                case "5": exportGraphviz(source); break;
-                case "6": runRepl(scanner); break;
-                case "7": new TestRunner().runAll("tests"); break;
-                case "8":
+                case "4": exportGraphviz(source); break;
+                case "5": runRepl(scanner); break;
+                case "6": new TestRunner().runAll("tests"); break;
+                case "7": generateTAC(source); break;
+                case "8": generatePythonCode(source); break;
+                case "9": generateWasmCode(source); break;
+                case "10": runFullPipeline(source); break;
+                case "11":
                     System.out.println("বিদায়!");
                     return;
                 default:
@@ -127,29 +132,78 @@ public class Main {
         errors.printAll("SEMANTIC ANALYSIS RESULT (includes lexical + syntax errors, if any)");
     }
 
+    /**
+     * Runs ALL FIVE compiler phases back-to-back and shows each
+     * phase's output in order: Lexer -> Parser -> Semantic Analyzer
+     * -> TAC -> Python target code. TAC and Python generation are
+     * skipped (with a clear message) if the earlier phases found any
+     * errors, since generating code from a broken AST makes no sense.
+     */
+    /** Translates a TACInstr class into a short Bangla label for the "ধরন" column. */
+    private static String tacKindBangla(TACInstr instr) {
+        return instr.getClass().getSimpleName().replaceFirst("^TAC", "");
+    }
+
     private static void runFullPipeline(String source) {
         ErrorReporter errors = new ErrorReporter();
 
-        header("FULL PIPELINE — STEP 1/3: LEXER");
+        header("FULL PIPELINE — PHASE 1/5: LEXER (Tokens)");
         Lexer lexer = new Lexer(source, errors);
         List<Token> tokens = lexer.tokenize();
-        System.out.println("  -> " + utils.BanglaUtil.toBanglaNum(tokens.size()) + " tokens produced.");
+        for (Token t : tokens) {
+            System.out.println("  " + t);
+        }
+        System.out.println();
+        System.out.println("  Total tokens produced: " + utils.BanglaUtil.toBanglaNum(tokens.size()));
 
-        header("FULL PIPELINE — STEP 2/3: PARSER");
+        header("FULL PIPELINE — PHASE 2/5: PARSER (Abstract Syntax Tree)");
         Parser parser = new Parser(tokens, errors);
         ProgramNode ast = parser.parseProgram();
-        System.out.println("  -> AST built with " + utils.BanglaUtil.toBanglaNum(ast.statements.size()) + " top-level statement(s).");
+        new ASTPrinter().print(ast);
 
-        header("FULL PIPELINE — STEP 3/3: SEMANTIC ANALYZER");
+        header("FULL PIPELINE — PHASE 3/5: SEMANTIC ANALYZER");
         SemanticAnalyzer semantic = new SemanticAnalyzer(errors);
         semantic.analyze(ast);
-        System.out.println("  -> Symbol table checked.");
-
-        header("GLOBAL SYMBOL TABLE");
+        System.out.println("  Global Symbol Table:");
         new SymbolTablePrinter().print(semantic.getGlobalSymbols());
 
-        header("FINAL AST");
-        new ASTPrinter().print(ast);
+        header("FULL PIPELINE — PHASE 4/5: THREE ADDRESS CODE (TAC)");
+        if (errors.hasErrors()) {
+            System.out.println("  Source-এ error আছে বলে TAC generate করা হয়নি।");
+        } else {
+            ThreeAddressCode tac = new TACGenerator().generate(ast);
+            if (tac.instructions.isEmpty()) {
+                System.out.println("  (প্রোগ্রামে কোনো instruction নেই)");
+            } else {
+                System.out.println("  নং   ধরন            নির্দেশ");
+                System.out.println("  --------------------------------------------------");
+                int i = 1;
+                for (TACInstr instr : tac.instructions) {
+                    String kind = tacKindBangla(instr);
+                    System.out.println("  " + utils.BanglaUtil.toBanglaNum(i) + ". [" + kind + "] " + instr.toString());
+                    i++;
+                }
+            }
+        }
+
+        header("FULL PIPELINE — PHASE 5/5: PYTHON TARGET CODE GENERATION");
+        if (errors.hasErrors()) {
+            System.out.println("  Source-এ error আছে বলে target code generate করা হয়নি।");
+        } else {
+            String pythonCode = new PythonCodeGenerator().generate(ast);
+            String outPath = "output/program.py";
+            try {
+                Files.createDirectories(Path.of("output"));
+                Files.write(Path.of(outPath), pythonCode.getBytes(StandardCharsets.UTF_8));
+                System.out.println("  Python code লেখা হয়েছে: " + outPath);
+                System.out.println("  রান করার জন্য টার্মিনালে লিখো: python " + outPath + "   (Mac/Linux-এ python3 লাগতে পারে)");
+                System.out.println();
+                System.out.println("  ---- Generated Code Preview ----");
+                System.out.println(pythonCode);
+            } catch (IOException e) {
+                System.out.println("  Could not write " + outPath + ": " + e.getMessage());
+            }
+        }
 
         errors.printAll("FULL PIPELINE RESULT (Lexical + Syntax + Semantic)");
     }
@@ -178,11 +232,211 @@ public class Main {
     }
 
     /**
-     * Interactive REPL: accumulate কথন source line by line, run it
-     * through the full pipeline on demand, and keep the session going.
-     * Great for live Q&A during a review — "what if I write X?" can be
-     * answered on the spot instead of editing a file.
+     * Runs the full front-end (lexer -> parser -> semantic analyzer),
+     * then — only if the program is error-free — generates and prints
+     * Three-Address Code (TAC), the compiler's intermediate
+     * representation between the AST and the final target code.
      */
+    private static void generateTAC(String source) {
+        ErrorReporter errors = new ErrorReporter();
+        Lexer lexer = new Lexer(source, errors);
+        List<Token> tokens = lexer.tokenize();
+        Parser parser = new Parser(tokens, errors);
+        ProgramNode ast = parser.parseProgram();
+        SemanticAnalyzer semantic = new SemanticAnalyzer(errors);
+        semantic.analyze(ast);
+
+        header("THREE ADDRESS CODE (TAC) — Intermediate Representation");
+        if (errors.hasErrors()) {
+            System.out.println("  Source-এ error আছে বলে TAC generate করা হয়নি।");
+            System.out.println("  আগে error গুলো ঠিক করো, তারপর আবার চেষ্টা করো।");
+        } else {
+            ThreeAddressCode tac = new TACGenerator().generate(ast);
+            if (tac.instructions.isEmpty()) {
+                System.out.println("  (প্রোগ্রামে কোনো instruction নেই)");
+            } else {
+                System.out.println("  নং   ধরন            নির্দেশ");
+                System.out.println("  --------------------------------------------------");
+                int i = 1;
+                for (TACInstr instr : tac.instructions) {
+                    String kind = tacKindBangla(instr);
+                    System.out.println("  " + utils.BanglaUtil.toBanglaNum(i) + ". [" + kind + "] " + instr.toString());
+                    i++;
+                }
+            }
+        }
+        errors.printAll("TAC GENERATION RESULT");
+    }
+
+    /**
+     * Runs the full front-end, then — only if the program is
+     * error-free — generates valid, executable Python 3 target code
+     * and writes it to output/program.py (satisfying the requirement:
+     * "Generation of a valid, executable Java or Python target code
+     * file from the source").
+     */
+    private static void generatePythonCode(String source) {
+        ErrorReporter errors = new ErrorReporter();
+        Lexer lexer = new Lexer(source, errors);
+        List<Token> tokens = lexer.tokenize();
+        Parser parser = new Parser(tokens, errors);
+        ProgramNode ast = parser.parseProgram();
+        SemanticAnalyzer semantic = new SemanticAnalyzer(errors);
+        semantic.analyze(ast);
+
+        header("PYTHON TARGET CODE GENERATION");
+        if (errors.hasErrors()) {
+            System.out.println("  Source-এ error আছে বলে target code generate করা হয়নি।");
+            System.out.println("  আগে error গুলো ঠিক করো, তারপর আবার চেষ্টা করো।");
+            errors.printAll("CODEGEN RESULT");
+            return;
+        }
+
+        String pythonCode = new PythonCodeGenerator().generate(ast);
+        String outPath = "output/program.py";
+        try {
+            Files.createDirectories(Path.of("output"));
+            Files.write(Path.of(outPath), pythonCode.getBytes(StandardCharsets.UTF_8));
+            System.out.println("  Python code লেখা হয়েছে: " + outPath);
+            System.out.println("  রান করার জন্য টার্মিনালে লিখো: python " + outPath + "   (Mac/Linux-এ python3 লাগতে পারে)");
+            System.out.println();
+            System.out.println("  ---- Generated Code Preview ----");
+            System.out.println(pythonCode);
+        } catch (IOException e) {
+            System.out.println("Could not write " + outPath + ": " + e.getMessage());
+        }
+        errors.printAll("CODEGEN RESULT");
+    }
+
+    /** Node.js host harness that supplies print_i32/print_str to the compiled .wasm module. */
+    private static final String WASM_RUN_HARNESS =
+        "// Auto-generated by কথন (Kothon) — host harness for the WebAssembly target.\n" +
+        "// Usage:\n" +
+        "//   wat2wasm program.wat -o program.wasm   (install WABT: npm install -g wabt, or see\n" +
+        "//                                            https://github.com/WebAssembly/wabt)\n" +
+        "//   node run_wasm.mjs\n" +
+        "import { readFileSync } from 'fs';\n" +
+        "import { fileURLToPath } from 'url';\n" +
+        "import { dirname, join } from 'path';\n" +
+        "\n" +
+        "const __dirname = dirname(fileURLToPath(import.meta.url));\n" +
+        "const bytes = readFileSync(join(__dirname, 'program.wasm'));\n" +
+        "\n" +
+        "function readCString(memory, ptr) {\n" +
+        "  const bytes = new Uint8Array(memory.buffer);\n" +
+        "  let end = ptr;\n" +
+        "  while (bytes[end] !== 0) end++;\n" +
+        "  return Buffer.from(bytes.slice(ptr, end)).toString('utf8');\n" +
+        "}\n" +
+        "\n" +
+        "const { instance } = await WebAssembly.instantiate(bytes, {\n" +
+        "  env: {\n" +
+        "    print_i32: (n) => console.log(n),\n" +
+        "    print_str: (ptr) => console.log(readCString(instance.exports.memory, ptr)),\n" +
+        "  },\n" +
+        "});\n" +
+        "\n" +
+        "instance.exports.main();\n";
+
+    /**
+     * OPTIONAL feature from the project requirements: "Generated target
+     * code in WebAssembly instead of Java or Python". Writes a .wat
+     * (WebAssembly Text) file — the textual, human-readable form of
+     * WebAssembly, exactly analogous to how PythonCodeGenerator writes
+     * a .py file — plus a small Node.js harness to actually run it,
+     * since raw WebAssembly has no built-in I/O of its own.
+     */
+    private static void generateWasmCode(String source) {
+        ErrorReporter errors = new ErrorReporter();
+        Lexer lexer = new Lexer(source, errors);
+        List<Token> tokens = lexer.tokenize();
+        Parser parser = new Parser(tokens, errors);
+        ProgramNode ast = parser.parseProgram();
+        SemanticAnalyzer semantic = new SemanticAnalyzer(errors);
+        semantic.analyze(ast);
+
+        header("WEBASSEMBLY TARGET CODE GENERATION (Optional)");
+        if (errors.hasErrors()) {
+            System.out.println("  Source-এ error আছে বলে target code generate করা হয়নি।");
+            System.out.println("  আগে error গুলো ঠিক করো, তারপর আবার চেষ্টা করো।");
+            errors.printAll("CODEGEN RESULT");
+            return;
+        }
+
+        String watCode = new WasmCodeGenerator().generate(ast);
+        String watPath = "output/program.wat";
+        String harnessPath = "output/run_wasm.mjs";
+        try {
+            Files.createDirectories(Path.of("output"));
+            Files.write(Path.of(watPath), watCode.getBytes(StandardCharsets.UTF_8));
+            Files.write(Path.of(harnessPath), WASM_RUN_HARNESS.getBytes(StandardCharsets.UTF_8));
+            System.out.println("  WebAssembly Text code লেখা হয়েছে: " + watPath);
+            System.out.println("  রান করার জন্য:");
+            System.out.println("    1) wat2wasm " + watPath + " -o output/program.wasm   (WABT toolkit লাগবে)");
+            System.out.println("    2) node " + harnessPath);
+            System.out.println();
+            System.out.println("  ---- Generated Code Preview ----");
+            System.out.println(watCode);
+        } catch (IOException e) {
+            System.out.println("Could not write " + watPath + ": " + e.getMessage());
+        }
+        errors.printAll("CODEGEN RESULT");
+    }
+
+    /**
+     * REPL support: compiles the accumulated buffer of কথন source all
+     * the way to Python and actually EXECUTES it, so a দেখাও(...) the
+     * user just typed shows its real output immediately — not just
+     * tokens/AST/symbol-table info. This is what "চালাও" runs.
+     */
+    private static void replRunAndShowOutput(String source) {
+        ErrorReporter errors = new ErrorReporter();
+        Lexer lexer = new Lexer(source, errors);
+        List<Token> tokens = lexer.tokenize();
+        Parser parser = new Parser(tokens, errors);
+        ProgramNode ast = parser.parseProgram();
+        SemanticAnalyzer semantic = new SemanticAnalyzer(errors);
+        semantic.analyze(ast);
+
+        header("চালাও — প্রোগ্রামের আউটপুট");
+        if (errors.hasErrors()) {
+            errors.printAll("REPL RESULT");
+            return;
+        }
+
+        String pythonCode = new PythonCodeGenerator().generate(ast);
+        Path tempFile = null;
+        try {
+            tempFile = Files.createTempFile("kothon_repl_", ".py");
+            Files.write(tempFile, pythonCode.getBytes(StandardCharsets.UTF_8));
+
+            // "python3" is the right name on Mac/Linux; Windows installs only
+            // register "python". Try python3 first, fall back to python so this
+            // works out of the box on either OS without the user configuring anything.
+            Process process;
+            try {
+                process = new ProcessBuilder("python3", tempFile.toString()).redirectErrorStream(true).start();
+            } catch (IOException notFound) {
+                process = new ProcessBuilder("python", tempFile.toString()).redirectErrorStream(true).start();
+            }
+            String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            process.waitFor();
+
+            if (output.isBlank()) {
+                System.out.println("  (কোনো output নেই — দেখাও() ব্যবহার করেছ তো?)");
+            } else {
+                System.out.print(output);
+            }
+        } catch (IOException | InterruptedException e) {
+            System.out.println("  Python দিয়ে রান করা যায়নি: " + e.getMessage());
+            System.out.println("  (নিশ্চিত করো এই মেশিনে 'python' অথবা 'python3' PATH-এ আছে)");
+        } finally {
+            if (tempFile != null) {
+                try { Files.deleteIfExists(tempFile); } catch (IOException ignored) { }
+            }
+        }
+    }
+
     private static void runRepl(Scanner scanner) {
         header("REPL MODE (Interactive)");
         System.out.println("  একটার পর একটা লাইন লিখো। বিশেষ কমান্ড:");
@@ -207,7 +461,7 @@ public class Main {
                     System.out.println("(কিছু লেখা হয়নি এখনো)");
                     continue;
                 }
-                runFullPipeline(buffer.toString());
+                replRunAndShowOutput(buffer.toString());
             } else {
                 buffer.append(line).append("\n");
             }
