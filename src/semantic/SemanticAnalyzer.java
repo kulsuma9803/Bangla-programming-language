@@ -40,6 +40,8 @@ public class SemanticAnalyzer {
             inferType(((PrintNode) node).expression); // any type is printable
         } else if (node instanceof IfNode) {
             checkIf((IfNode) node);
+        } else if (node instanceof WhileNode) {
+            checkWhile((WhileNode) node);
         } else if (node instanceof BlockNode) {
             checkBlock((BlockNode) node);
         }
@@ -52,6 +54,7 @@ public class SemanticAnalyzer {
                     "Duplicate variable declaration: '" + decl.varName + "' is already declared in this scope",
                     decl.line, decl.column);
         }
+        decl.resolvedType = decl.typeName; // target type, used by codegen to detect Integer->String coercion
         if (decl.initializer != null) {
             String exprType = inferType(decl.initializer);
             if (!exprType.equals(TYPE_ERROR) && !exprType.equals(decl.typeName) && !isCoercible(exprType, decl.typeName)) {
@@ -72,6 +75,7 @@ public class SemanticAnalyzer {
             inferType(assign.value); // still walk RHS to catch further errors
             return;
         }
+        assign.resolvedType = sym.type; // target type, used by codegen to detect Integer->String coercion
         String exprType = inferType(assign.value);
         if (!exprType.equals(TYPE_ERROR) && !exprType.equals(sym.type) && !isCoercible(exprType, sym.type)) {
             errors.report("Semantic",
@@ -93,6 +97,16 @@ public class SemanticAnalyzer {
         if (ifNode.elseBranch != null) checkBlock(ifNode.elseBranch);
     }
 
+    private void checkWhile(WhileNode whileNode) {
+        String condType = inferType(whileNode.condition);
+        if (!condType.equals(TYPE_ERROR) && !condType.equals(TYPE_BOOL)) {
+            errors.report("Semantic",
+                    "Condition of 'যতক্ষণ' must be a boolean expression (comparison, সত্য/মিথ্যা, বা এবং/অথবা/না), got '" + condType + "'",
+                    whileNode.line, whileNode.column);
+        }
+        checkBlock(whileNode.body);
+    }
+
     private void checkBlock(BlockNode block) {
         symbols.pushScope();
         for (ASTNode stmt : block.statements) {
@@ -104,6 +118,19 @@ public class SemanticAnalyzer {
     // ---------------- expressions: type inference ----------------
 
     private String inferType(ASTNode node) {
+        String type = inferTypeRaw(node);
+        if (node != null) node.resolvedType = type;
+        return type;
+    }
+
+    /**
+     * Original type-inference logic, unchanged. Kept separate from
+     * inferType() so that every call point — including the many
+     * recursive ones below — automatically gets its result cached onto
+     * node.resolvedType via the wrapper above, without having to edit
+     * every individual return statement.
+     */
+    private String inferTypeRaw(ASTNode node) {
         if (node == null) return TYPE_ERROR;
 
         if (node instanceof NumberNode) {
@@ -162,6 +189,7 @@ public class SemanticAnalyzer {
         String leftType = inferType(bin.left);
         String rightType = inferType(bin.right);
 
+        // Logical operators: এবং / অথবা -> both sides must be boolean
         if (op.equals("এবং") || op.equals("অথবা")) {
             if (!leftType.equals(TYPE_ERROR) && !leftType.equals(TYPE_BOOL)) {
                 errors.report("Semantic", "Left side of '" + op + "' must be boolean, got '" + leftType + "'", bin.line, bin.column);
@@ -172,6 +200,7 @@ public class SemanticAnalyzer {
             return TYPE_BOOL;
         }
 
+        // Relational operators: == != < > <= >= -> both sides same type, result boolean
         if (isRelOp(op)) {
             if (!leftType.equals(TYPE_ERROR) && !rightType.equals(TYPE_ERROR) && !leftType.equals(rightType)) {
                 errors.report("Semantic",
@@ -228,6 +257,7 @@ public class SemanticAnalyzer {
         return fromType.equals(TYPE_INT) && toType.equals(TYPE_STRING);
     }
 
+    /** True if the given node is the literal integer 0 (used for divide-by-zero detection). */
     private boolean isLiteralZero(ASTNode node) {
         return node instanceof NumberNode && ((NumberNode) node).value == 0;
     }
