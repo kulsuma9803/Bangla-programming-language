@@ -1,11 +1,14 @@
 package lexer;
 
+/**
+ * All token categories recognized by the কথন (Kothon) lexer.
+ */
 public enum TokenType {
     // Literals
     INT_LITERAL,
     STRING_LITERAL,
     IDENTIFIER,
-
+	
     // Keywords
     DHORI,      // ধরি   - declare
     SONGKHA,    // সংখ্যা - Integer type
@@ -13,6 +16,7 @@ public enum TokenType {
     DEKHAO,     // দেখাও  - print
     JODI,       // যদি   - if
     NAHOLE,     // নাহলে - else
+    JOTOKKHON,  // যতক্ষণ - while
     SOTTO,      // সত্য  - true
     MITTHA,     // মিথ্যা - false
     EBONG,      // এবং   - and
@@ -34,3 +38,4 @@ public enum TokenType {
     EOF,
     ERROR
 }
+

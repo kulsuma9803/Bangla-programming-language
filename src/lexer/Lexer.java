@@ -15,6 +15,7 @@ public class Lexer {
         KEYWORDS.put("দেখাও", TokenType.DEKHAO);
         KEYWORDS.put("যদি", TokenType.JODI);
         KEYWORDS.put("নাহলে", TokenType.NAHOLE);
+        KEYWORDS.put("যতক্ষণ", TokenType.JOTOKKHON);
         KEYWORDS.put("সত্য", TokenType.SOTTO);
         KEYWORDS.put("মিথ্যা", TokenType.MITTHA);
         KEYWORDS.put("এবং", TokenType.EBONG);
@@ -64,6 +65,7 @@ public class Lexer {
         return tokens;
     }
 
+    // ---------- helpers ----------
 
     private boolean isAtEnd() {
         return pos >= source.length();
